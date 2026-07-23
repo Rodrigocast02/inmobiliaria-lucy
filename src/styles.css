@@ -101,10 +101,28 @@ h2 { font-size:clamp(2rem,4vw,3.25rem); }
 .empty svg { width:55px; height:55px; }
 .detail { padding-top:35px; }
 .breadcrumbs { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; margin-bottom:25px; }
-.detail-gallery { display:grid; grid-template-columns:2fr 1fr; grid-template-rows:250px 250px; gap:8px; overflow:hidden; background:var(--cream); }
-.detail-gallery img { width:100%; height:100%; object-fit:cover; }
-.detail-gallery img:first-child { grid-row:1/3; }
-.detail-gallery img:only-child { grid-column:1/3; }
+.detail-gallery { overflow:hidden; background:#111; box-shadow:0 16px 45px #17221e1c; }
+.gallery-stage { position:relative; height:clamp(430px,62vw,720px); display:grid; place-items:center; background:#111; }
+.gallery-stage>img { width:100%; height:100%; object-fit:contain; }
+.gallery-status,.gallery-count { position:absolute; top:16px; z-index:2; color:#fff; padding:7px 12px; border-radius:20px; background:#17221ed9; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
+.gallery-status { left:16px; background:var(--green); }
+.gallery-status.vendida,.gallery-status.alquilada { background:#e12929; }
+.gallery-count { right:60px; }
+.gallery-fullscreen,.gallery-arrow { position:absolute; z-index:2; display:grid; place-items:center; color:#fff; border:0; background:#111b; transition:.2s; }
+.gallery-fullscreen { top:14px; right:14px; width:38px; height:38px; border-radius:3px; }
+.gallery-fullscreen svg { width:18px; }
+.gallery-arrow { top:50%; width:48px; height:64px; transform:translateY(-50%); }
+.gallery-arrow:hover,.gallery-fullscreen:hover { background:#111e; }
+.gallery-arrow svg { width:30px; height:30px; }
+.gallery-previous { left:12px; }
+.gallery-next { right:12px; }
+.gallery-thumbnails { padding:10px; display:flex; gap:10px; overflow-x:auto; background:#fff; scrollbar-width:thin; }
+.gallery-thumbnails button { flex:0 0 112px; height:78px; padding:0; overflow:hidden; border:3px solid transparent; background:#eee; opacity:.72; }
+.gallery-thumbnails button:hover,.gallery-thumbnails button.active { opacity:1; border-color:#1ca7d8; }
+.gallery-thumbnails img { width:100%; height:100%; object-fit:cover; }
+.detail-gallery:fullscreen { display:flex; flex-direction:column; width:100vw; height:100vh; background:#080808; }
+.detail-gallery:fullscreen .gallery-stage { flex:1; height:auto; }
+.detail-gallery:fullscreen .gallery-thumbnails { flex:0 0 100px; background:#111; }
 .detail-layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:70px; padding-top:55px; }
 .detail-layout article h1 { font-size:clamp(2.4rem,4vw,4rem); margin-bottom:15px; }
 .detail-price { color:var(--green); font-size:28px; font-weight:700; }
@@ -169,5 +187,5 @@ h2 { font-size:clamp(2rem,4vw,3.25rem); }
   .menu-button{display:block}.nav{display:none;position:absolute;top:80px;left:0;right:0;padding:25px;background:#fff;flex-direction:column;align-items:stretch;box-shadow:0 15px 30px #0002}.nav.open{display:flex}.hero{min-height:620px}.hero-search{grid-template-columns:1fr}.hero-search label{border-right:0;border-bottom:1px solid var(--line)}.property-grid{grid-template-columns:repeat(2,1fr)}.story{grid-template-columns:1fr}.story-image{height:450px}.experience{right:20px}.benefit-grid{grid-template-columns:1fr}.cta{align-items:flex-start;flex-direction:column}.footer-grid{grid-template-columns:1fr 1fr}.detail-layout{grid-template-columns:1fr}.contact-card{position:static}.admin-shell{grid-template-columns:1fr}.admin-sidebar{position:static;height:auto;flex-direction:row;align-items:center}.admin-sidebar nav{display:none}.admin-sidebar>button{margin:0 0 0 auto}.admin-main{padding:30px 20px}.table-head{display:none}.table-row{grid-template-columns:1fr auto;gap:12px}.table-row>span,.table-row>strong{display:none}.stats{grid-template-columns:1fr 1fr}
 }
 @media(max-width:620px){
-  .header{height:70px}.nav{top:70px}.hero-content{width:88%}.hero h1{font-size:3.1rem}.section{padding:70px 0}.section-heading{align-items:flex-start;flex-direction:column;gap:15px}.property-grid{grid-template-columns:1fr}.property-image{height:250px}.story{width:100%}.story-image{height:340px}.story-copy{padding:60px 7%}.footer-grid{grid-template-columns:1fr}.detail-gallery{display:block;height:350px}.detail-gallery img{display:none}.detail-gallery img:first-child{display:block}.detail-features{grid-template-columns:1fr 1fr}.detail-features>div:nth-child(2){border-right:0}.detail-features>div{border-bottom:1px solid var(--line)}.filters{flex-direction:column}.login-page{padding:20px}.login-card{padding:30px 23px}.admin-sidebar{padding:18px}.admin-sidebar .brand span:last-child{display:none}.admin-heading{align-items:flex-start;flex-direction:column;gap:20px}.admin-heading .button{width:100%}.stats{grid-template-columns:1fr 1fr}.admin-form{padding:25px 18px}.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.form-actions{flex-direction:column-reverse}.form-actions .button{width:100%}
+  .header{height:70px}.nav{top:70px}.hero-content{width:88%}.hero h1{font-size:3.1rem}.section{padding:70px 0}.section-heading{align-items:flex-start;flex-direction:column;gap:15px}.property-grid{grid-template-columns:1fr}.property-image{height:250px}.story{width:100%}.story-image{height:340px}.story-copy{padding:60px 7%}.footer-grid{grid-template-columns:1fr}.gallery-stage{height:360px}.gallery-thumbnails button{flex-basis:82px;height:60px}.gallery-count{display:none}.gallery-arrow{width:42px;height:54px}.detail-features{grid-template-columns:1fr 1fr}.detail-features>div:nth-child(2){border-right:0}.detail-features>div{border-bottom:1px solid var(--line)}.filters{flex-direction:column}.login-page{padding:20px}.login-card{padding:30px 23px}.admin-sidebar{padding:18px}.admin-sidebar .brand span:last-child{display:none}.admin-heading{align-items:flex-start;flex-direction:column;gap:20px}.admin-heading .button{width:100%}.stats{grid-template-columns:1fr 1fr}.admin-form{padding:25px 18px}.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.form-actions{flex-direction:column-reverse}.form-actions .button{width:100%}
 }

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronRight, Home,
+  ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Home,
   Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
-  Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, X,
+  Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, X,
 } from 'lucide-react'
 import { demoProperties } from './data'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
@@ -116,12 +116,38 @@ function ListingsPage({ properties }: { properties: Property[] }) {
   return <Layout><section className="page-hero"><span className="eyebrow light">Encuentra tu espacio</span><h1>Propiedades</h1><p>Explora nuestra selección disponible para venta y alquiler.</p></section><section className="section"><div className="filters"><label><Search size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por ciudad, zona o tipo" /></label><select value={operation} onChange={e => setOperation(e.target.value)}><option>Todas</option><option>Venta</option><option>Renta</option></select></div><p className="result-count">{filtered.length} propiedades encontradas</p><div className="property-grid">{filtered.map(p => <PropertyCard key={p.id} property={p} />)}</div>{!filtered.length && <div className="empty"><Building2 /><h3>No encontramos resultados</h3><p>Prueba con otros filtros.</p></div>}</section></Layout>
 }
 
+function PropertyGallery({ property }: { property: Property }) {
+  const [active, setActive] = useState(0)
+  const images = property.images.length ? property.images : ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=85']
+  const show = (index: number) => setActive((index + images.length) % images.length)
+  const openFullscreen = () => {
+    const gallery = document.querySelector('.detail-gallery')
+    if (gallery instanceof HTMLElement) gallery.requestFullscreen?.()
+  }
+
+  return <div className="detail-gallery">
+    <div className="gallery-stage">
+      <img src={images[active]} alt={`${property.title}, fotografía ${active + 1} de ${images.length}`} />
+      <span className={`gallery-status ${property.status.toLowerCase()}`}>{property.status}</span>
+      <span className="gallery-count">{active + 1} / {images.length}</span>
+      <button className="gallery-fullscreen" type="button" aria-label="Ver galería en pantalla completa" onClick={openFullscreen}><Maximize2 /></button>
+      {images.length > 1 && <>
+        <button className="gallery-arrow gallery-previous" type="button" aria-label="Fotografía anterior" onClick={() => show(active - 1)}><ChevronLeft /></button>
+        <button className="gallery-arrow gallery-next" type="button" aria-label="Fotografía siguiente" onClick={() => show(active + 1)}><ChevronRight /></button>
+      </>}
+    </div>
+    {images.length > 1 && <div className="gallery-thumbnails" aria-label="Miniaturas de la propiedad">
+      {images.map((image, index) => <button className={index === active ? 'active' : ''} type="button" key={`${image}-${index}`} aria-label={`Ver fotografía ${index + 1}`} aria-current={index === active ? 'true' : undefined} onClick={() => show(index)}><img src={image} alt="" /></button>)}
+    </div>}
+  </div>
+}
+
 function DetailPage({ properties }: { properties: Property[] }) {
   const { id } = useParams()
   const property = properties.find(p => p.id === id)
   if (!property) return <Navigate to="/propiedades" />
   const message = encodeURIComponent(`Hola, me interesa la propiedad: ${property.title}`)
-  return <Layout><section className="detail section"><div className="breadcrumbs"><Link to="/">Inicio</Link><ChevronRight size={14} /><Link to="/propiedades">Propiedades</Link><ChevronRight size={14} /><span>{property.title}</span></div><div className="detail-gallery"><img src={property.images[0]} alt={property.title} />{property.images.slice(1, 3).map((image, index) => <img key={index} src={image} alt={`${property.title} ${index + 2}`} />)}</div><div className="detail-layout"><article><span className="operation inline">{property.operation}</span><h1>{property.title}</h1><p className="location"><MapPin size={17} /> {property.address}</p><p className="detail-price">{money(property)} {property.operation === 'Renta' && <small>/ mes</small>}</p><div className="detail-features"><div><BedDouble /><strong>{property.bedrooms}</strong><span>Habitaciones</span></div><div><Bath /><strong>{property.bathrooms}</strong><span>Baños</span></div><div><Car /><strong>{property.parking}</strong><span>Parqueos</span></div><div><Ruler /><strong>{property.area_m2}</strong><span>m²</span></div></div><h2>Descripción</h2><p className="description">{property.description}</p></article><aside className="contact-card"><h3>¿Te interesa esta propiedad?</h3><p>Agenda una visita o solicita más información.</p><a className="button" href={`https://wa.me/${whatsapp}?text=${message}`} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar por WhatsApp</a><a className="button button-outline" href={`mailto:${contactEmail}?subject=${encodeURIComponent(property.title)}`}><Mail size={18} /> Enviar correo</a><small>Referencia: {property.id}</small></aside></div></section></Layout>
+  return <Layout><section className="detail section"><div className="breadcrumbs"><Link to="/">Inicio</Link><ChevronRight size={14} /><Link to="/propiedades">Propiedades</Link><ChevronRight size={14} /><span>{property.title}</span></div><PropertyGallery property={property} /><div className="detail-layout"><article><span className="operation inline">{property.operation}</span><h1>{property.title}</h1><p className="location"><MapPin size={17} /> {property.address}</p><p className="detail-price">{money(property)} {property.operation === 'Renta' && <small>/ mes</small>}</p><div className="detail-features"><div><BedDouble /><strong>{property.bedrooms}</strong><span>Habitaciones</span></div><div><Bath /><strong>{property.bathrooms}</strong><span>Baños</span></div><div><Car /><strong>{property.parking}</strong><span>Parqueos</span></div><div><Ruler /><strong>{property.area_m2}</strong><span>m²</span></div></div><h2>Descripción</h2><p className="description">{property.description}</p></article><aside className="contact-card"><h3>¿Te interesa esta propiedad?</h3><p>Agenda una visita o solicita más información.</p><a className="button" href={`https://wa.me/${whatsapp}?text=${message}`} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar por WhatsApp</a><a className="button button-outline" href={`mailto:${contactEmail}?subject=${encodeURIComponent(property.title)}`}><Mail size={18} /> Enviar correo</a><small>Referencia: {property.id}</small></aside></div></section></Layout>
 }
 
 function LoginPage({ onLogin }: { onLogin: () => void }) {
