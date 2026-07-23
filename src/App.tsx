@@ -206,7 +206,12 @@ function App() {
   useEffect(() => {
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => setAuthenticated(Boolean(data.session)))
-    supabase.from('properties').select('*').order('created_at', { ascending: false }).then(({ data }) => { if (data?.length) setProperties(data as Property[]) })
+    supabase.from('properties').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+      if (!data?.length) return
+      const savedProperties = data as Property[]
+      const savedIds = new Set(savedProperties.map(property => property.id))
+      setProperties([...savedProperties, ...demoProperties.filter(property => !savedIds.has(property.id))])
+    })
   }, [])
   const publicProperties = useMemo(() => properties.filter(p => p.status !== 'Vendida' && p.status !== 'Alquilada'), [properties])
   const logout = async () => { if (supabase) await supabase.auth.signOut(); setAuthenticated(false) }
