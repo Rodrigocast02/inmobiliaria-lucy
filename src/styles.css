@@ -76,7 +76,7 @@ h2 { font-size:clamp(2rem,4vw,3.25rem); }
 .center-heading h2 { margin:12px 0; }
 .benefit-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:30px; text-align:center; }
 .benefit-grid>div { padding:36px; }
-.benefit-grid>div>span { margin:auto; display:grid; place-items:center; width:65px; height:65px; border-radius:50%; background:var(--cream); color:var(--green); }
+.benefit-grid>div>span { margin:auto; display:grid; place-items:center; width:65px; height:65px; border-radius:50%; background:linear-gradient(135deg,#dfbd72,#c9923f); color:var(--green); box-shadow:0 8px 20px #c9923f33; }
 .benefit-grid h3 { font:600 22px 'Playfair Display',serif; margin:20px 0 10px; }
 .benefit-grid p { color:var(--muted); line-height:1.6; }
 .cta { width:min(1180px,90%); margin:0 auto 100px; padding:58px 6%; background:var(--green); color:#fff; display:flex; justify-content:space-between; align-items:center; gap:30px; }
