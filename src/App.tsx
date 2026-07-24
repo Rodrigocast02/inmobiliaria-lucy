@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Home,
+  ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Facebook, Home,
   Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
   Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, X,
 } from 'lucide-react'
@@ -9,8 +9,11 @@ import { demoProperties } from './data'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import type { Property } from './types'
 
-const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '50255555555'
-const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'ventas@inmobiliarialucy.com'
+const whatsapp = '50230781591'
+const whatsappDisplay = '+502 3078-1591'
+const contactEmail = 'lucyalarcon.habitia@outlook.com'
+const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
+const instagramUrl = 'https://www.instagram.com/lucyalarconhabitia?igsh=MWlzbDA4cW1xNDBlaQ=='
 
 function money(property: Property) {
   return new Intl.NumberFormat('es-GT', {
@@ -23,8 +26,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   return <>
     <header className="header">
       <Link className="brand" to="/" onClick={() => setOpen(false)}>
-        <span className="brand-mark"><Building2 size={22} /></span>
-        <span><strong>Lucy</strong><small>Bienes Raíces</small></span>
+        <img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" />
+        <span><strong>HABITIA</strong><small>Bienes Raíces</small></span>
       </Link>
       <button className="menu-button" aria-label="Abrir menú" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
       <nav className={open ? 'nav open' : 'nav'}>
@@ -43,12 +46,12 @@ function Layout({ children }: { children: React.ReactNode }) {
 function Footer() {
   return <footer id="contacto" className="footer">
     <div className="footer-grid">
-      <div><div className="brand brand-light"><span className="brand-mark"><Building2 size={22} /></span><span><strong>Lucy</strong><small>Bienes Raíces</small></span></div><p>Te acompañamos a encontrar un lugar que se sienta como tuyo.</p></div>
+      <div><div className="brand brand-light"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></div><p>Te acompañamos a encontrar un lugar que se sienta como tuyo.</p></div>
       <div><h4>Explora</h4><Link to="/propiedades">Propiedades</Link><a href="#nosotros">Nosotros</a><Link to="/admin">Administración</Link></div>
-      <div><h4>Contacto</h4><a href={`mailto:${contactEmail}`}><Mail size={16} /> {contactEmail}</a><a href={`https://wa.me/${whatsapp}`}><MessageCircle size={16} /> +502 5555-5555</a><span><MapPin size={16} /> Ciudad de Guatemala</span></div>
-      <div><h4>Síguenos</h4><a href="#instagram"><Instagram size={17} /> Instagram</a></div>
+      <div><h4>Contacto</h4><a href={`mailto:${contactEmail}`}><Mail size={16} /> {contactEmail}</a><a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer"><MessageCircle size={16} /> {whatsappDisplay}</a><span><MapPin size={16} /> Ciudad de Guatemala</span></div>
+      <div><h4>Síguenos</h4><a href={facebookUrl} target="_blank" rel="noreferrer"><Facebook size={17} /> Facebook</a><a href={instagramUrl} target="_blank" rel="noreferrer"><Instagram size={17} /> Instagram</a></div>
     </div>
-    <div className="footer-bottom">© {new Date().getFullYear()} Inmobiliaria Lucy. Todos los derechos reservados.</div>
+    <div className="footer-bottom">© {new Date().getFullYear()} HABITIA Bienes Raíces. Todos los derechos reservados.</div>
   </footer>
 }
 
@@ -95,7 +98,7 @@ function HomePage({ properties }: { properties: Property[] }) {
     </section>
 
     <section id="nosotros" className="story section-wide">
-      <div className="story-image"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=85" alt="Asesora inmobiliaria" /><div className="experience"><strong>10+</strong><span>años creando conexiones</span></div></div>
+      <div className="story-image"><img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=85" alt="Asesora inmobiliaria" /><div className="experience"><strong>Más de 5</strong><span>años de experiencia</span></div></div>
       <div className="story-copy"><span className="eyebrow">Acerca de nosotros</span><h2>Más que propiedades, acompañamos decisiones importantes.</h2><p>Escuchamos lo que necesitas, seleccionamos oportunidades y te guiamos con claridad durante cada etapa del proceso.</p><ul><li><Check /> Atención personal</li><li><Check /> Propiedades verificadas</li><li><Check /> Negociación transparente</li></ul><Link className="button button-dark" to="/propiedades">Conocer propiedades <ChevronRight size={18} /></Link></div>
     </section>
 
@@ -161,7 +164,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) setError('Correo o contraseña incorrectos.'); else { onLogin(); navigate('/admin') }
   }
-  return <div className="login-page"><Link className="brand" to="/"><span className="brand-mark"><Building2 size={22} /></span><span><strong>Lucy</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><label>Contraseña<input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" /></label>{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
+  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><label>Contraseña<input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" /></label>{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
 }
 
 const emptyProperty: Property = { id: '', title: '', description: '', price: 0, currency: 'USD', operation: 'Venta', type: 'Casa', city: 'Ciudad de Guatemala', zone: '', address: '', bedrooms: 1, bathrooms: 1, parking: 1, area_m2: 0, status: 'Disponible', featured: false, published: true, images: [] }
@@ -210,7 +213,7 @@ function AdminPage({ properties, setProperties, onLogout }: { properties: Proper
   return <div className="admin-shell"><AdminSidebar onLogout={onLogout} /><main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">Panel de control</span><h1>Propiedades</h1><p>Administra el contenido visible en el sitio.</p></div><button className="button" onClick={() => setEditing('new')}><Plus size={18} /> Nueva propiedad</button></div>{!isSupabaseConfigured && <div className="admin-demo"><strong>Estás viendo el modo demostración.</strong> Conecta Supabase para guardar cambios permanentemente.</div>}<div className="stats"><div><strong>{properties.length}</strong><span>Total</span></div><div><strong>{properties.filter(p => p.published).length}</strong><span>Publicadas</span></div><div><strong>{properties.filter(p => p.operation === 'Venta').length}</strong><span>En venta</span></div><div><strong>{properties.filter(p => p.operation === 'Renta').length}</strong><span>En renta</span></div></div><div className="admin-table"><div className="table-head"><span>Propiedad</span><span>Operación</span><span>Precio</span><span>Estado</span><span>Acciones</span></div>{properties.map(p => <div className="table-row" key={p.id}><div className="table-property"><img src={p.images[0]} alt="" /><span><strong>{p.title}</strong><small>{p.zone}, {p.city}</small></span></div><span>{p.operation}</span><strong>{money(p)}</strong><span className={p.published ? 'status published' : 'status'}>{p.published ? 'Publicada' : 'Oculta'}</span><div className="table-actions"><button aria-label="Editar" onClick={() => setEditing(p)}><Pencil size={17} /></button><button aria-label="Eliminar" onClick={() => remove(p.id)}><Trash2 size={17} /></button></div></div>)}</div></main></div>
 }
 
-function AdminSidebar({ onLogout }: { onLogout: () => void }) { return <aside className="admin-sidebar"><Link className="brand brand-light" to="/"><span className="brand-mark"><Building2 size={22} /></span><span><strong>Lucy</strong><small>Administración</small></span></Link><nav><span><Building2 /> Propiedades</span><Link to="/"><Home /> Ver sitio</Link></nav><button onClick={onLogout}><LogOut /> Cerrar sesión</button></aside> }
+function AdminSidebar({ onLogout }: { onLogout: () => void }) { return <aside className="admin-sidebar"><Link className="brand brand-light" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Administración</small></span></Link><nav><span><Building2 /> Propiedades</span><Link to="/"><Home /> Ver sitio</Link></nav><button onClick={onLogout}><LogOut /> Cerrar sesión</button></aside> }
 
 function App() {
   const [properties, setProperties] = useState<Property[]>(demoProperties)
