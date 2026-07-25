@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Facebook, Home,
   Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
@@ -14,6 +14,16 @@ const whatsappDisplay = '+502 3078-1591'
 const contactEmail = 'lucyalarcon.habitia@outlook.com'
 const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
 const instagramUrl = 'https://www.instagram.com/habitia.gt?igsh=cjF4b2plYm9lOHY4'
+
+function ScrollToTop() {
+  const { pathname, search } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname, search])
+
+  return null
+}
 
 function money(property: Property) {
   return new Intl.NumberFormat('es-GT', {
@@ -230,7 +240,7 @@ function App() {
   }, [])
   const publicProperties = useMemo(() => properties.filter(p => p.status !== 'Vendida' && p.status !== 'Alquilada'), [properties])
   const logout = async () => { if (supabase) await supabase.auth.signOut(); setAuthenticated(false) }
-  return <Routes><Route path="/" element={<HomePage properties={publicProperties} />} /><Route path="/propiedades" element={<ListingsPage properties={publicProperties} />} /><Route path="/propiedad/:id" element={<DetailPage properties={properties} />} /><Route path="/admin/login" element={<LoginPage onLogin={() => setAuthenticated(true)} />} /><Route path="/admin" element={authenticated ? <AdminPage properties={properties} setProperties={setProperties} onLogout={logout} /> : <Navigate to="/admin/login" />} /><Route path="*" element={<Navigate to="/" />} /></Routes>
+  return <><ScrollToTop /><Routes><Route path="/" element={<HomePage properties={publicProperties} />} /><Route path="/propiedades" element={<ListingsPage properties={publicProperties} />} /><Route path="/propiedad/:id" element={<DetailPage properties={properties} />} /><Route path="/admin/login" element={<LoginPage onLogin={() => setAuthenticated(true)} />} /><Route path="/admin" element={authenticated ? <AdminPage properties={properties} setProperties={setProperties} onLogout={logout} /> : <Navigate to="/admin/login" />} /><Route path="*" element={<Navigate to="/" />} /></Routes></>
 }
 
 export default App
