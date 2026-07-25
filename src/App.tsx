@@ -13,7 +13,7 @@ const whatsapp = '50230781591'
 const whatsappDisplay = '+502 3078-1591'
 const contactEmail = 'lucyalarcon.habitia@outlook.com'
 const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
-const instagramUrl = 'https://www.instagram.com/lucyalarconhabitia?igsh=MWlzbDA4cW1xNDBlaQ=='
+const instagramUrl = 'https://www.instagram.com/habitia.gt?igsh=cjF4b2plYm9lOHY4'
 
 function money(property: Property) {
   return new Intl.NumberFormat('es-GT', {
