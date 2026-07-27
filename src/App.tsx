@@ -15,10 +15,18 @@ const contactEmail = 'lucyalarcon.habitia@outlook.com'
 const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
 const instagramUrl = 'https://www.instagram.com/habitia.gt?igsh=cjF4b2plYm9lOHY4'
 
-const authLinkParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-const authLinkType = authLinkParams.get('type')
-const cameFromPasswordLink = ['invite', 'recovery', 'signup', 'magiclink'].includes(authLinkType || '')
-  || authLinkParams.get('error_code') === 'otp_expired'
+const getAuthLinkType = () => new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type')
+const passwordIsInitialized = (user: { user_metadata?: Record<string, unknown> }) =>
+  user.user_metadata?.password_initialized === true
+
+const shouldOpenPasswordSetup = (
+  user: { user_metadata?: Record<string, unknown> },
+  event?: string,
+) => {
+  const linkType = getAuthLinkType()
+  if (linkType === 'recovery' || event === 'PASSWORD_RECOVERY') return true
+  return linkType === 'invite' && !passwordIsInitialized(user)
+}
 
 type UserRole = 'admin' | 'editor'
 type AdminSection = 'properties' | 'users'
@@ -185,8 +193,17 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('')
     if (!supabase) { onLogin(); navigate('/admin'); return }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError('Correo o contraseña incorrectos.'); else { onLogin(); navigate('/admin') }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError('Correo o contraseña incorrectos.')
+    } else {
+      if (data.user && !passwordIsInitialized(data.user)) {
+        await supabase.auth.updateUser({ data: { password_initialized: true } })
+      }
+      window.history.replaceState(null, '', '/admin')
+      onLogin()
+      navigate('/admin', { replace: true })
+    }
   }
   return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><label>Contraseña<input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" /></label>{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
 }
@@ -198,6 +215,16 @@ function PasswordSetupPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!supabase || getAuthLinkType() === 'recovery') return
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user && passwordIsInitialized(data.user)) {
+        window.history.replaceState(null, '', '/admin')
+        navigate('/admin', { replace: true })
+      }
+    })
+  }, [navigate])
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -217,7 +244,10 @@ function PasswordSetupPage() {
     }
 
     setSaving(true)
-    const { error: updateError } = await supabase.auth.updateUser({ password })
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+      data: { password_initialized: true },
+    })
     setSaving(false)
 
     if (updateError) {
@@ -226,7 +256,8 @@ function PasswordSetupPage() {
     }
 
     setSaved(true)
-    window.setTimeout(() => navigate('/admin'), 900)
+    window.history.replaceState(null, '', '/admin')
+    window.setTimeout(() => navigate('/admin', { replace: true }), 900)
   }
 
   return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Crear contraseña</h1><p>Completa tu registro para ingresar al panel de HABITIA.</p><label>Nueva contraseña<input required minLength={8} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" /></label><label>Confirmar contraseña<input required minLength={8} type="password" value={confirmation} onChange={e => setConfirmation(e.target.value)} placeholder="Repite tu contraseña" /></label>{error && <p className="form-error">{error}</p>}{saved && <p className="form-success">Contraseña creada. Abriendo el panel…</p>}<button className="button" disabled={saving || saved} type="submit">{saving ? 'Guardando…' : 'Crear contraseña'}</button></form></div>
@@ -404,7 +435,12 @@ function App() {
       setAuthenticated(Boolean(data.session))
       if (data.session) {
         await loadRole(data.session.user.id)
-        if (cameFromPasswordLink) navigate('/admin/crear-contrasena', { replace: true })
+        if (shouldOpenPasswordSetup(data.session.user)) {
+          navigate('/admin/crear-contrasena', { replace: true })
+        } else if (new URLSearchParams(window.location.hash.replace(/^#/, '')).get('error_code') === 'otp_expired') {
+          window.history.replaceState(null, '', '/admin')
+          navigate('/admin', { replace: true })
+        }
       }
       setAuthReady(true)
     })
@@ -415,7 +451,7 @@ function App() {
         setAuthReady(true)
         return
       }
-      if (cameFromPasswordLink || event === 'PASSWORD_RECOVERY') {
+      if (shouldOpenPasswordSetup(session.user, event)) {
         navigate('/admin/crear-contrasena', { replace: true })
       }
       window.setTimeout(async () => {
