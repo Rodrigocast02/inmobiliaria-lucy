@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Facebook, Home,
-  Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
+  Eye, EyeOff, Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
   Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, UserPlus, Users, X,
 } from 'lucide-react'
 import { demoProperties } from './data'
@@ -185,6 +185,24 @@ function DetailPage({ properties }: { properties: Property[] }) {
   return <Layout><section className="detail section"><div className="breadcrumbs"><Link to="/">Inicio</Link><ChevronRight size={14} /><Link to="/propiedades">Propiedades</Link><ChevronRight size={14} /><span>{property.title}</span></div><PropertyGallery property={property} /><div className="detail-layout"><article><span className="operation inline">{property.operation}</span><h1>{property.title}</h1><p className="location"><MapPin size={17} /> {property.address}</p><p className="detail-price">{money(property)} {property.operation === 'Renta' && <small>/ mes</small>}</p><div className="detail-features"><div><BedDouble /><strong>{property.bedrooms}</strong><span>Habitaciones</span></div><div><Bath /><strong>{property.bathrooms}</strong><span>Baños</span></div><div><Car /><strong>{property.parking}</strong><span>Parqueos</span></div><div><Ruler /><strong>{property.area_m2}</strong><span>m²</span></div></div><h2>Descripción</h2><p className="description">{property.description}</p></article><aside className="contact-card"><h3>¿Te interesa esta propiedad?</h3><p>Agenda una visita o solicita más información.</p><a className="button" href={`https://wa.me/${whatsapp}?text=${message}`} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar por WhatsApp</a><a className="button button-outline" href={`mailto:${contactEmail}?subject=${encodeURIComponent(property.title)}`}><Mail size={18} /> Enviar correo</a><small>Referencia: {property.id}</small></aside></div></section></Layout>
 }
 
+function PasswordField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  minLength,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  minLength?: number
+}) {
+  const [visible, setVisible] = useState(false)
+
+  return <label>{label}<span className="password-input"><input required minLength={minLength} type={visible ? 'text' : 'password'} value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} /><button type="button" aria-label={visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`} title={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setVisible(current => !current)}>{visible ? <EyeOff /> : <Eye />}</button></span></label>
+}
+
 function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -205,7 +223,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       navigate('/admin', { replace: true })
     }
   }
-  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><label>Contraseña<input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" /></label>{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
+  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><PasswordField label="Contraseña" value={password} onChange={setPassword} placeholder="••••••••" />{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
 }
 
 function PasswordSetupPage() {
@@ -260,7 +278,7 @@ function PasswordSetupPage() {
     window.setTimeout(() => navigate('/admin', { replace: true }), 900)
   }
 
-  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Crear contraseña</h1><p>Completa tu registro para ingresar al panel de HABITIA.</p><label>Nueva contraseña<input required minLength={8} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" /></label><label>Confirmar contraseña<input required minLength={8} type="password" value={confirmation} onChange={e => setConfirmation(e.target.value)} placeholder="Repite tu contraseña" /></label>{error && <p className="form-error">{error}</p>}{saved && <p className="form-success">Contraseña creada. Abriendo el panel…</p>}<button className="button" disabled={saving || saved} type="submit">{saving ? 'Guardando…' : 'Crear contraseña'}</button></form></div>
+  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Crear contraseña</h1><p>Completa tu registro para ingresar al panel de HABITIA.</p><PasswordField label="Nueva contraseña" value={password} onChange={setPassword} placeholder="Mínimo 8 caracteres" minLength={8} /><PasswordField label="Confirmar contraseña" value={confirmation} onChange={setConfirmation} placeholder="Repite tu contraseña" minLength={8} />{error && <p className="form-error">{error}</p>}{saved && <p className="form-success">Contraseña creada. Abriendo el panel…</p>}<button className="button" disabled={saving || saved} type="submit">{saving ? 'Guardando…' : 'Crear contraseña'}</button></form></div>
 }
 
 const emptyProperty: Property = { id: '', title: '', description: '', price: 0, currency: 'USD', operation: 'Venta', type: 'Casa', city: 'Ciudad de Guatemala', zone: '', address: '', bedrooms: 1, bathrooms: 1, parking: 1, area_m2: 0, status: 'Disponible', featured: false, published: true, images: [] }
