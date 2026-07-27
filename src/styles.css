@@ -149,7 +149,7 @@ h2 { font-size:clamp(2rem,4vw,3.25rem); }
 .login-card input:focus,.admin-form input:focus,.admin-form textarea:focus { border-color:var(--green); }
 .password-input { position:relative; display:block; }
 .password-input input { width:100%; padding-right:48px; }
-.password-input button { position:absolute; top:50%; right:6px; width:38px; height:38px; padding:0; border:0; background:transparent; color:var(--muted); display:grid; place-items:center; cursor:pointer; }
+.password-input button { position:absolute; top:50%; right:6px; transform:translateY(-50%); width:38px; height:38px; padding:0; border:0; background:transparent; color:var(--muted); display:grid; place-items:center; cursor:pointer; }
 .password-input button:hover,.password-input button:focus-visible { color:var(--green); }
 .password-input button svg { width:19px; height:19px; }
 .login-card>a { text-align:center; font-size:13px; color:var(--green); }
