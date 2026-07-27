@@ -246,10 +246,12 @@ function PropertyForm({ initial, onSave, onCancel }: { initial?: Property; onSav
 
 function UsersPanel() {
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [currentUserId, setCurrentUserId] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('editor')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [deletingId, setDeletingId] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -269,6 +271,7 @@ function UsersPanel() {
 
   useEffect(() => {
     loadProfiles()
+    supabase?.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || ''))
   }, [])
 
   const invite = async (event: React.FormEvent) => {
@@ -303,7 +306,34 @@ function UsersPanel() {
     await loadProfiles()
   }
 
-  return <><div className="admin-heading"><div><span className="eyebrow">Control de acceso</span><h1>Usuarios</h1><p>Invita administradores o editores al panel.</p></div></div><div className="users-layout"><form className="invite-card" onSubmit={invite}><span className="invite-icon"><UserPlus /></span><h2>Invitar usuario</h2><p>Recibirá un correo para crear su propia contraseña.</p><label>Correo electrónico<input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="usuario@correo.com" /></label><label>Rol<select value={role} onChange={event => setRole(event.target.value as UserRole)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><div className="role-help"><strong>{role === 'admin' ? 'Administrador' : 'Editor'}</strong><span>{role === 'admin' ? 'Puede administrar propiedades e invitar usuarios.' : 'Puede administrar propiedades, pero no invitar usuarios.'}</span></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button className="button" disabled={sending} type="submit">{sending ? 'Enviando…' : 'Enviar invitación'}</button></form><section className="users-card"><div><h2>Usuarios registrados</h2><p>Personas que tienen acceso al panel.</p></div>{loading ? <p>Cargando usuarios…</p> : <div className="users-list">{profiles.map(profile => <article key={profile.id}><span className="user-avatar">{profile.email.slice(0, 1).toUpperCase()}</span><div><strong>{profile.email}</strong><small>Registrado el {new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium' }).format(new Date(profile.created_at))}</small></div><span className={`role-badge ${profile.role}`}>{profile.role === 'admin' ? 'Administrador' : 'Editor'}</span></article>)}{!profiles.length && <p>Todavía no hay usuarios registrados.</p>}</div>}</section></div></>
+  const deleteUser = async (profile: Profile) => {
+    setMessage('')
+    setError('')
+
+    if (!supabase || profile.id === currentUserId) return
+    if (!window.confirm(`¿Eliminar el acceso de ${profile.email}? Esta acción no se puede deshacer.`)) return
+
+    setDeletingId(profile.id)
+    const { data, error: deleteError } = await supabase.functions.invoke('delete-user', {
+      body: { userId: profile.id },
+    })
+    setDeletingId('')
+
+    if (deleteError || data?.error) {
+      let detail = data?.error || deleteError?.message || 'No se pudo eliminar el usuario.'
+      if (deleteError && 'context' in deleteError && deleteError.context instanceof Response) {
+        const body = await deleteError.context.json().catch(() => null)
+        if (body?.error) detail = body.error
+      }
+      setError(detail)
+      return
+    }
+
+    setProfiles(current => current.filter(item => item.id !== profile.id))
+    setMessage(`Se eliminó el acceso de ${profile.email}.`)
+  }
+
+  return <><div className="admin-heading"><div><span className="eyebrow">Control de acceso</span><h1>Usuarios</h1><p>Invita administradores o editores al panel.</p></div></div><div className="users-layout"><form className="invite-card" onSubmit={invite}><span className="invite-icon"><UserPlus /></span><h2>Invitar usuario</h2><p>Recibirá un correo para crear su propia contraseña.</p><label>Correo electrónico<input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="usuario@correo.com" /></label><label>Rol<select value={role} onChange={event => setRole(event.target.value as UserRole)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><div className="role-help"><strong>{role === 'admin' ? 'Administrador' : 'Editor'}</strong><span>{role === 'admin' ? 'Puede administrar propiedades e invitar usuarios.' : 'Puede administrar propiedades, pero no invitar usuarios.'}</span></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button className="button" disabled={sending} type="submit">{sending ? 'Enviando…' : 'Enviar invitación'}</button></form><section className="users-card"><div><h2>Usuarios registrados</h2><p>Personas que tienen acceso al panel.</p></div>{loading ? <p>Cargando usuarios…</p> : <div className="users-list">{profiles.map(profile => <article key={profile.id}><span className="user-avatar">{profile.email.slice(0, 1).toUpperCase()}</span><div><strong>{profile.email}</strong><small>{profile.id === currentUserId ? 'Tu cuenta · ' : ''}Registrado el {new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium' }).format(new Date(profile.created_at))}</small></div><span className={`role-badge ${profile.role}`}>{profile.role === 'admin' ? 'Administrador' : 'Editor'}</span>{profile.id !== currentUserId && <button className="delete-user-button" type="button" aria-label={`Eliminar usuario ${profile.email}`} title="Eliminar usuario" disabled={deletingId === profile.id} onClick={() => deleteUser(profile)}>{deletingId === profile.id ? '…' : <Trash2 />}</button>}</article>)}{!profiles.length && <p>Todavía no hay usuarios registrados.</p>}</div>}</section></div></>
 }
 
 function AdminPage({ properties, setProperties, role, onLogout }: { properties: Property[]; setProperties: React.Dispatch<React.SetStateAction<Property[]>>; role: UserRole; onLogout: () => void }) {
