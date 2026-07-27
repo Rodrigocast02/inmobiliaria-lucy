@@ -69,6 +69,7 @@ export default {
         id: data.user.id,
         email,
         role,
+        access_status: 'pending',
       })
 
       if (profileError) {
