@@ -34,6 +34,7 @@ type Profile = {
   id: string
   email: string
   role: UserRole
+  access_status: 'pending' | 'active'
   created_at: string
 }
 
@@ -218,6 +219,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       if (data.user && !passwordIsInitialized(data.user)) {
         await supabase.auth.updateUser({ data: { password_initialized: true } })
       }
+      await supabase.rpc('mark_profile_active')
       window.history.replaceState(null, '', '/admin')
       onLogin()
       navigate('/admin', { replace: true })
@@ -273,6 +275,7 @@ function PasswordSetupPage() {
       return
     }
 
+    await supabase.rpc('mark_profile_active')
     setSaved(true)
     window.history.replaceState(null, '', '/admin')
     window.setTimeout(() => navigate('/admin', { replace: true }), 900)
@@ -312,7 +315,7 @@ function UsersPanel() {
     }
     const { data, error: profilesError } = await supabase
       .from('profiles')
-      .select('id,email,role,created_at')
+      .select('id,email,role,access_status,created_at')
       .order('created_at', { ascending: true })
     if (!profilesError && data) setProfiles(data as Profile[])
     setLoading(false)
@@ -382,7 +385,7 @@ function UsersPanel() {
     setMessage(`Se eliminó el acceso de ${profile.email}.`)
   }
 
-  return <><div className="admin-heading"><div><span className="eyebrow">Control de acceso</span><h1>Usuarios</h1><p>Invita administradores o editores al panel.</p></div></div><div className="users-layout"><form className="invite-card" onSubmit={invite}><span className="invite-icon"><UserPlus /></span><h2>Invitar usuario</h2><p>Recibirá un correo para crear su propia contraseña.</p><label>Correo electrónico<input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="usuario@correo.com" /></label><label>Rol<select value={role} onChange={event => setRole(event.target.value as UserRole)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><div className="role-help"><strong>{role === 'admin' ? 'Administrador' : 'Editor'}</strong><span>{role === 'admin' ? 'Puede administrar propiedades e invitar usuarios.' : 'Puede administrar propiedades, pero no invitar usuarios.'}</span></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button className="button" disabled={sending} type="submit">{sending ? 'Enviando…' : 'Enviar invitación'}</button></form><section className="users-card"><div><h2>Usuarios registrados</h2><p>Personas que tienen acceso al panel.</p></div>{loading ? <p>Cargando usuarios…</p> : <div className="users-list">{profiles.map(profile => <article key={profile.id}><span className="user-avatar">{profile.email.slice(0, 1).toUpperCase()}</span><div><strong>{profile.email}</strong><small>{profile.id === currentUserId ? 'Tu cuenta · ' : ''}Registrado el {new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium' }).format(new Date(profile.created_at))}</small></div><span className={`role-badge ${profile.role}`}>{profile.role === 'admin' ? 'Administrador' : 'Editor'}</span>{profile.id !== currentUserId && <button className="delete-user-button" type="button" aria-label={`Eliminar usuario ${profile.email}`} title="Eliminar usuario" disabled={deletingId === profile.id} onClick={() => deleteUser(profile)}>{deletingId === profile.id ? '…' : <Trash2 />}</button>}</article>)}{!profiles.length && <p>Todavía no hay usuarios registrados.</p>}</div>}</section></div></>
+  return <><div className="admin-heading"><div><span className="eyebrow">Control de acceso</span><h1>Usuarios</h1><p>Invita administradores o editores al panel.</p></div></div><div className="users-layout"><form className="invite-card" onSubmit={invite}><span className="invite-icon"><UserPlus /></span><h2>Invitar usuario</h2><p>Recibirá un correo para crear su propia contraseña.</p><label>Correo electrónico<input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="usuario@correo.com" /></label><label>Rol<select value={role} onChange={event => setRole(event.target.value as UserRole)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><div className="role-help"><strong>{role === 'admin' ? 'Administrador' : 'Editor'}</strong><span>{role === 'admin' ? 'Puede administrar propiedades e invitar usuarios.' : 'Puede administrar propiedades, pero no invitar usuarios.'}</span></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button className="button" disabled={sending} type="submit">{sending ? 'Enviando…' : 'Enviar invitación'}</button></form><section className="users-card"><div><h2>Usuarios registrados</h2><p>Personas que tienen acceso al panel.</p></div>{loading ? <p>Cargando usuarios…</p> : <div className="users-list">{profiles.map(profile => <article key={profile.id}><span className="user-avatar">{profile.email.slice(0, 1).toUpperCase()}</span><div><strong>{profile.email}</strong><small>{profile.id === currentUserId ? 'Tu cuenta · ' : ''}Registrado el {new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium' }).format(new Date(profile.created_at))}</small></div><span className={`access-status ${profile.access_status}`}>{profile.access_status === 'pending' ? 'Pendiente' : 'Activo'}</span><span className={`role-badge ${profile.role}`}>{profile.role === 'admin' ? 'Administrador' : 'Editor'}</span>{profile.id !== currentUserId && <button className="delete-user-button" type="button" aria-label={`Eliminar usuario ${profile.email}`} title="Eliminar usuario" disabled={deletingId === profile.id} onClick={() => deleteUser(profile)}>{deletingId === profile.id ? '…' : <Trash2 />}</button>}</article>)}{!profiles.length && <p>Todavía no hay usuarios registrados.</p>}</div>}</section></div></>
 }
 
 function AdminPage({ properties, setProperties, role, onLogout }: { properties: Property[]; setProperties: React.Dispatch<React.SetStateAction<Property[]>>; role: UserRole; onLogout: () => void }) {
