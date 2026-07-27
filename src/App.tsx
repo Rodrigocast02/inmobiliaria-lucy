@@ -15,6 +15,11 @@ const contactEmail = 'lucyalarcon.habitia@outlook.com'
 const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
 const instagramUrl = 'https://www.instagram.com/habitia.gt?igsh=cjF4b2plYm9lOHY4'
 
+const authLinkParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+const authLinkType = authLinkParams.get('type')
+const cameFromPasswordLink = ['invite', 'recovery', 'signup', 'magiclink'].includes(authLinkType || '')
+  || authLinkParams.get('error_code') === 'otp_expired'
+
 type UserRole = 'admin' | 'editor'
 type AdminSection = 'properties' | 'users'
 type Profile = {
@@ -340,6 +345,7 @@ function AdminPage({ properties, setProperties, role, onLogout }: { properties: 
 function AdminSidebar({ role, section, onSectionChange, onLogout }: { role: UserRole; section: AdminSection; onSectionChange: (section: AdminSection) => void; onLogout: () => void }) { return <aside className="admin-sidebar"><Link className="brand brand-light" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Administración</small></span></Link><div className="admin-role">{role === 'admin' ? 'Administrador' : 'Editor'}</div><nav><button className={section === 'properties' ? 'active' : ''} onClick={() => onSectionChange('properties')}><Building2 /> Propiedades</button>{role === 'admin' && <button className={section === 'users' ? 'active' : ''} onClick={() => onSectionChange('users')}><Users /> Usuarios</button>}<Link to="/"><Home /> Ver sitio</Link></nav><button onClick={onLogout}><LogOut /> Cerrar sesión</button></aside> }
 
 function App() {
+  const navigate = useNavigate()
   const [properties, setProperties] = useState<Property[]>(demoProperties)
   const [authenticated, setAuthenticated] = useState(false)
   const [role, setRole] = useState<UserRole | null>(isSupabaseConfigured ? null : 'admin')
@@ -366,15 +372,21 @@ function App() {
     }
     supabase.auth.getSession().then(async ({ data }) => {
       setAuthenticated(Boolean(data.session))
-      if (data.session) await loadRole(data.session.user.id)
+      if (data.session) {
+        await loadRole(data.session.user.id)
+        if (cameFromPasswordLink) navigate('/admin/crear-contrasena', { replace: true })
+      }
       setAuthReady(true)
     })
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setAuthenticated(Boolean(session))
       if (!session) {
         setRole(null)
         setAuthReady(true)
         return
+      }
+      if (cameFromPasswordLink || event === 'PASSWORD_RECOVERY') {
+        navigate('/admin/crear-contrasena', { replace: true })
       }
       window.setTimeout(async () => {
         await loadRole(session.user.id)
