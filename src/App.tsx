@@ -3,7 +3,7 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } fr
 import {
   ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Facebook, Home,
   Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
-  Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, X,
+  Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, UserPlus, Users, X,
 } from 'lucide-react'
 import { demoProperties } from './data'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
@@ -14,6 +14,15 @@ const whatsappDisplay = '+502 3078-1591'
 const contactEmail = 'lucyalarcon.habitia@outlook.com'
 const facebookUrl = 'https://www.facebook.com/share/1BaqDSiotR/'
 const instagramUrl = 'https://www.instagram.com/habitia.gt?igsh=cjF4b2plYm9lOHY4'
+
+type UserRole = 'admin' | 'editor'
+type AdminSection = 'properties' | 'users'
+type Profile = {
+  id: string
+  email: string
+  role: UserRole
+  created_at: string
+}
 
 function ScrollToTop() {
   const { pathname, search } = useLocation()
@@ -177,6 +186,47 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
   return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Administración</h1><p>Ingresa para gestionar las propiedades y fotografías.</p>{!isSupabaseConfigured && <div className="demo-notice">Modo demostración: usa cualquier correo y contraseña.</div>}<label>Correo electrónico<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@correo.com" /></label><label>Contraseña<input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" /></label>{error && <p className="form-error">{error}</p>}<button className="button" type="submit">Ingresar <ArrowRight size={18} /></button><Link to="/">Volver al sitio</Link></form></div>
 }
 
+function PasswordSetupPage() {
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const navigate = useNavigate()
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError('')
+
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.')
+      return
+    }
+    if (password !== confirmation) {
+      setError('Las contraseñas no coinciden.')
+      return
+    }
+    if (!supabase) {
+      setError('Supabase todavía no está conectado.')
+      return
+    }
+
+    setSaving(true)
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+    setSaving(false)
+
+    if (updateError) {
+      setError('El enlace no es válido o ya venció. Solicita una nueva invitación.')
+      return
+    }
+
+    setSaved(true)
+    window.setTimeout(() => navigate('/admin'), 900)
+  }
+
+  return <div className="login-page"><Link className="brand" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Bienes Raíces</small></span></Link><form className="login-card" onSubmit={submit}><span className="login-icon"><KeyRound /></span><h1>Crear contraseña</h1><p>Completa tu registro para ingresar al panel de HABITIA.</p><label>Nueva contraseña<input required minLength={8} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" /></label><label>Confirmar contraseña<input required minLength={8} type="password" value={confirmation} onChange={e => setConfirmation(e.target.value)} placeholder="Repite tu contraseña" /></label>{error && <p className="form-error">{error}</p>}{saved && <p className="form-success">Contraseña creada. Abriendo el panel…</p>}<button className="button" disabled={saving || saved} type="submit">{saving ? 'Guardando…' : 'Crear contraseña'}</button></form></div>
+}
+
 const emptyProperty: Property = { id: '', title: '', description: '', price: 0, currency: 'USD', operation: 'Venta', type: 'Casa', city: 'Ciudad de Guatemala', zone: '', address: '', bedrooms: 1, bathrooms: 1, parking: 1, area_m2: 0, status: 'Disponible', featured: false, published: true, images: [] }
 
 function PropertyForm({ initial, onSave, onCancel }: { initial?: Property; onSave: (p: Property, files: File[]) => Promise<void>; onCancel: () => void }) {
@@ -189,8 +239,71 @@ function PropertyForm({ initial, onSave, onCancel }: { initial?: Property; onSav
   return <form className="admin-form" onSubmit={submit}><div className="form-head"><div><h2>{initial ? 'Editar propiedad' : 'Nueva propiedad'}</h2><p>Completa la información que aparecerá en el catálogo.</p></div><button type="button" className="icon-button" onClick={onCancel}><X /></button></div><div className="form-grid"><label className="span-2">Título<input required value={form.title} onChange={e => update('title', e.target.value)} /></label><label>Operación<select value={form.operation} onChange={e => update('operation', e.target.value)}><option>Venta</option><option>Renta</option></select></label><label>Tipo<select value={form.type} onChange={e => update('type', e.target.value)}><option>Casa</option><option>Apartamento</option><option>Terreno</option><option>Oficina</option><option>Local</option></select></label><label>Precio<input required min="0" type="number" value={form.price} onChange={e => update('price', Number(e.target.value))} /></label><label>Moneda<select value={form.currency} onChange={e => update('currency', e.target.value)}><option>USD</option><option>GTQ</option></select></label><label>Ciudad<input required value={form.city} onChange={e => update('city', e.target.value)} /></label><label>Zona o departamento<input required value={form.zone} onChange={e => update('zone', e.target.value)} /></label><label className="span-2">Dirección pública<input required value={form.address} onChange={e => update('address', e.target.value)} /></label><label>Habitaciones<input min="0" type="number" value={form.bedrooms} onChange={e => update('bedrooms', Number(e.target.value))} /></label><label>Baños<input min="0" type="number" value={form.bathrooms} onChange={e => update('bathrooms', Number(e.target.value))} /></label><label>Parqueos<input min="0" type="number" value={form.parking} onChange={e => update('parking', Number(e.target.value))} /></label><label>Área en m²<input min="0" type="number" value={form.area_m2} onChange={e => update('area_m2', Number(e.target.value))} /></label><label className="span-2">Descripción<textarea required rows={5} value={form.description} onChange={e => update('description', e.target.value)} /></label>{initial && <div className="span-2 current-images"><div><strong>Fotografías publicadas</strong><small>{form.images.length ? 'Puedes eliminar las que ya no quieras mostrar.' : 'Esta publicación no tiene fotografías.'}</small></div>{form.images.length > 0 && <div className="current-images-grid">{form.images.map((image, index) => <figure key={image}><img src={image} alt={`Fotografía publicada ${index + 1}`} /><button type="button" aria-label={`Eliminar fotografía ${index + 1}`} title="Eliminar fotografía" onClick={() => removeImage(image)}><Trash2 /></button>{index === 0 && <span>Portada</span>}</figure>)}</div>}</div>}<label className="span-2 upload"><Upload /><span><strong>Agregar fotografías</strong><small>JPG, PNG o WebP. Puedes seleccionar varias.</small></span><input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []))} /></label>{files.length > 0 && <div className="span-2 selected-files"><span>{files.length} fotografías nuevas seleccionadas</span><button type="button" onClick={() => setFiles([])}>Quitar selección</button></div>}<label className="check-label"><input type="checkbox" checked={form.featured} onChange={e => update('featured', e.target.checked)} /> Propiedad destacada</label><label className="check-label"><input type="checkbox" checked={form.published} onChange={e => update('published', e.target.checked)} /> Publicada en el sitio</label></div><div className="form-actions"><button className="button button-outline" type="button" onClick={onCancel}>Cancelar</button><button className="button" disabled={saving} type="submit">{saving ? 'Guardando…' : 'Guardar propiedad'}</button></div></form>
 }
 
-function AdminPage({ properties, setProperties, onLogout }: { properties: Property[]; setProperties: React.Dispatch<React.SetStateAction<Property[]>>; onLogout: () => void }) {
+function UsersPanel() {
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<UserRole>('editor')
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+
+  const loadProfiles = async () => {
+    if (!supabase) {
+      setProfiles([])
+      setLoading(false)
+      return
+    }
+    const { data, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id,email,role,created_at')
+      .order('created_at', { ascending: true })
+    if (!profilesError && data) setProfiles(data as Profile[])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadProfiles()
+  }, [])
+
+  const invite = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setMessage('')
+    setError('')
+
+    if (!supabase) {
+      setError('Conecta Supabase para enviar invitaciones.')
+      return
+    }
+
+    setSending(true)
+    const { data, error: inviteError } = await supabase.functions.invoke('invite-user', {
+      body: { email: email.trim(), role },
+    })
+    setSending(false)
+
+    if (inviteError || data?.error) {
+      let detail = data?.error || inviteError?.message || 'No se pudo enviar la invitación.'
+      if (inviteError && 'context' in inviteError && inviteError.context instanceof Response) {
+        const body = await inviteError.context.json().catch(() => null)
+        if (body?.error) detail = body.error
+      }
+      setError(detail)
+      return
+    }
+
+    setMessage(data?.message || `Invitación enviada a ${email.trim()}.`)
+    setEmail('')
+    setRole('editor')
+    await loadProfiles()
+  }
+
+  return <><div className="admin-heading"><div><span className="eyebrow">Control de acceso</span><h1>Usuarios</h1><p>Invita administradores o editores al panel.</p></div></div><div className="users-layout"><form className="invite-card" onSubmit={invite}><span className="invite-icon"><UserPlus /></span><h2>Invitar usuario</h2><p>Recibirá un correo para crear su propia contraseña.</p><label>Correo electrónico<input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="usuario@correo.com" /></label><label>Rol<select value={role} onChange={event => setRole(event.target.value as UserRole)}><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><div className="role-help"><strong>{role === 'admin' ? 'Administrador' : 'Editor'}</strong><span>{role === 'admin' ? 'Puede administrar propiedades e invitar usuarios.' : 'Puede administrar propiedades, pero no invitar usuarios.'}</span></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button className="button" disabled={sending} type="submit">{sending ? 'Enviando…' : 'Enviar invitación'}</button></form><section className="users-card"><div><h2>Usuarios registrados</h2><p>Personas que tienen acceso al panel.</p></div>{loading ? <p>Cargando usuarios…</p> : <div className="users-list">{profiles.map(profile => <article key={profile.id}><span className="user-avatar">{profile.email.slice(0, 1).toUpperCase()}</span><div><strong>{profile.email}</strong><small>Registrado el {new Intl.DateTimeFormat('es-GT', { dateStyle: 'medium' }).format(new Date(profile.created_at))}</small></div><span className={`role-badge ${profile.role}`}>{profile.role === 'admin' ? 'Administrador' : 'Editor'}</span></article>)}{!profiles.length && <p>Todavía no hay usuarios registrados.</p>}</div>}</section></div></>
+}
+
+function AdminPage({ properties, setProperties, role, onLogout }: { properties: Property[]; setProperties: React.Dispatch<React.SetStateAction<Property[]>>; role: UserRole; onLogout: () => void }) {
   const [editing, setEditing] = useState<Property | null | 'new'>(null)
+  const [section, setSection] = useState<AdminSection>('properties')
   const save = async (property: Property, files: File[]) => {
     let images = property.images
     const client = supabase
@@ -219,28 +332,73 @@ function AdminPage({ properties, setProperties, onLogout }: { properties: Proper
     setProperties(prev => prev.some(p => p.id === final.id) ? prev.map(p => p.id === final.id ? final : p) : [final, ...prev]); setEditing(null)
   }
   const remove = async (id: string) => { if (!confirm('¿Eliminar esta propiedad?')) return; if (supabase) await supabase.from('properties').delete().eq('id', id); setProperties(prev => prev.filter(p => p.id !== id)) }
-  if (editing) return <div className="admin-shell"><AdminSidebar onLogout={onLogout} /><main className="admin-main"><PropertyForm initial={editing === 'new' ? undefined : editing} onSave={save} onCancel={() => setEditing(null)} /></main></div>
-  return <div className="admin-shell"><AdminSidebar onLogout={onLogout} /><main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">Panel de control</span><h1>Propiedades</h1><p>Administra el contenido visible en el sitio.</p></div><button className="button" onClick={() => setEditing('new')}><Plus size={18} /> Nueva propiedad</button></div>{!isSupabaseConfigured && <div className="admin-demo"><strong>Estás viendo el modo demostración.</strong> Conecta Supabase para guardar cambios permanentemente.</div>}<div className="stats"><div><strong>{properties.length}</strong><span>Total</span></div><div><strong>{properties.filter(p => p.published).length}</strong><span>Publicadas</span></div><div><strong>{properties.filter(p => p.operation === 'Venta').length}</strong><span>En venta</span></div><div><strong>{properties.filter(p => p.operation === 'Renta').length}</strong><span>En renta</span></div></div><div className="admin-table"><div className="table-head"><span>Propiedad</span><span>Operación</span><span>Precio</span><span>Estado</span><span>Acciones</span></div>{properties.map(p => <div className="table-row" key={p.id}><div className="table-property"><img src={p.images[0]} alt="" /><span><strong>{p.title}</strong><small>{p.zone}, {p.city}</small></span></div><span>{p.operation}</span><strong>{money(p)}</strong><span className={p.published ? 'status published' : 'status'}>{p.published ? 'Publicada' : 'Oculta'}</span><div className="table-actions"><button aria-label="Editar" onClick={() => setEditing(p)}><Pencil size={17} /></button><button aria-label="Eliminar" onClick={() => remove(p.id)}><Trash2 size={17} /></button></div></div>)}</div></main></div>
+  if (editing) return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><PropertyForm initial={editing === 'new' ? undefined : editing} onSave={save} onCancel={() => setEditing(null)} /></main></div>
+  if (section === 'users' && role === 'admin') return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><UsersPanel /></main></div>
+  return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">Panel de control</span><h1>Propiedades</h1><p>Administra el contenido visible en el sitio.</p></div><button className="button" onClick={() => setEditing('new')}><Plus size={18} /> Nueva propiedad</button></div>{!isSupabaseConfigured && <div className="admin-demo"><strong>Estás viendo el modo demostración.</strong> Conecta Supabase para guardar cambios permanentemente.</div>}<div className="stats"><div><strong>{properties.length}</strong><span>Total</span></div><div><strong>{properties.filter(p => p.published).length}</strong><span>Publicadas</span></div><div><strong>{properties.filter(p => p.operation === 'Venta').length}</strong><span>En venta</span></div><div><strong>{properties.filter(p => p.operation === 'Renta').length}</strong><span>En renta</span></div></div><div className="admin-table"><div className="table-head"><span>Propiedad</span><span>Operación</span><span>Precio</span><span>Estado</span><span>Acciones</span></div>{properties.map(p => <div className="table-row" key={p.id}><div className="table-property"><img src={p.images[0]} alt="" /><span><strong>{p.title}</strong><small>{p.zone}, {p.city}</small></span></div><span>{p.operation}</span><strong>{money(p)}</strong><span className={p.published ? 'status published' : 'status'}>{p.published ? 'Publicada' : 'Oculta'}</span><div className="table-actions"><button aria-label="Editar" onClick={() => setEditing(p)}><Pencil size={17} /></button><button aria-label="Eliminar" onClick={() => remove(p.id)}><Trash2 size={17} /></button></div></div>)}</div></main></div>
 }
 
-function AdminSidebar({ onLogout }: { onLogout: () => void }) { return <aside className="admin-sidebar"><Link className="brand brand-light" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Administración</small></span></Link><nav><span><Building2 /> Propiedades</span><Link to="/"><Home /> Ver sitio</Link></nav><button onClick={onLogout}><LogOut /> Cerrar sesión</button></aside> }
+function AdminSidebar({ role, section, onSectionChange, onLogout }: { role: UserRole; section: AdminSection; onSectionChange: (section: AdminSection) => void; onLogout: () => void }) { return <aside className="admin-sidebar"><Link className="brand brand-light" to="/"><img className="brand-logo" src="/habitia-logo.png" alt="Logo de HABITIA Bienes Raíces" /><span><strong>HABITIA</strong><small>Administración</small></span></Link><div className="admin-role">{role === 'admin' ? 'Administrador' : 'Editor'}</div><nav><button className={section === 'properties' ? 'active' : ''} onClick={() => onSectionChange('properties')}><Building2 /> Propiedades</button>{role === 'admin' && <button className={section === 'users' ? 'active' : ''} onClick={() => onSectionChange('users')}><Users /> Usuarios</button>}<Link to="/"><Home /> Ver sitio</Link></nav><button onClick={onLogout}><LogOut /> Cerrar sesión</button></aside> }
 
 function App() {
   const [properties, setProperties] = useState<Property[]>(demoProperties)
   const [authenticated, setAuthenticated] = useState(false)
+  const [role, setRole] = useState<UserRole | null>(isSupabaseConfigured ? null : 'admin')
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured)
+
+  const loadRole = async (userId: string) => {
+    if (!supabase) {
+      setRole('admin')
+      return
+    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle()
+    setRole(data?.role === 'admin' || data?.role === 'editor' ? data.role : null)
+  }
+
   useEffect(() => {
-    if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => setAuthenticated(Boolean(data.session)))
+    if (!supabase) {
+      setAuthenticated(false)
+      setAuthReady(true)
+      return
+    }
+    supabase.auth.getSession().then(async ({ data }) => {
+      setAuthenticated(Boolean(data.session))
+      if (data.session) await loadRole(data.session.user.id)
+      setAuthReady(true)
+    })
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthenticated(Boolean(session))
+      if (!session) {
+        setRole(null)
+        setAuthReady(true)
+        return
+      }
+      window.setTimeout(async () => {
+        await loadRole(session.user.id)
+        setAuthReady(true)
+      }, 0)
+    })
     supabase.from('properties').select('*').order('created_at', { ascending: false }).then(({ data }) => {
       if (!data?.length) return
       const savedProperties = data as Property[]
       const savedIds = new Set(savedProperties.map(property => property.id))
       setProperties([...savedProperties, ...demoProperties.filter(property => !savedIds.has(property.id))])
     })
+    return () => authListener.subscription.unsubscribe()
   }, [])
   const publicProperties = useMemo(() => properties.filter(p => p.status !== 'Vendida' && p.status !== 'Alquilada'), [properties])
   const logout = async () => { if (supabase) await supabase.auth.signOut(); setAuthenticated(false) }
-  return <><ScrollToTop /><Routes><Route path="/" element={<HomePage properties={publicProperties} />} /><Route path="/propiedades" element={<ListingsPage properties={publicProperties} />} /><Route path="/propiedad/:id" element={<DetailPage properties={properties} />} /><Route path="/admin/login" element={<LoginPage onLogin={() => setAuthenticated(true)} />} /><Route path="/admin" element={authenticated ? <AdminPage properties={properties} setProperties={setProperties} onLogout={logout} /> : <Navigate to="/admin/login" />} /><Route path="*" element={<Navigate to="/" />} /></Routes></>
+  const adminElement = !authReady
+    ? <div className="admin-loading">Cargando panel…</div>
+    : authenticated && role
+      ? <AdminPage properties={properties} setProperties={setProperties} role={role} onLogout={logout} />
+      : authenticated
+        ? <div className="login-page"><div className="login-card"><span className="login-icon"><ShieldCheck /></span><h1>Acceso no autorizado</h1><p>Tu cuenta no tiene un rol asignado. Solicita acceso a un administrador.</p><button className="button" onClick={logout}>Cerrar sesión</button></div></div>
+        : <Navigate to="/admin/login" />
+  return <><ScrollToTop /><Routes><Route path="/" element={<HomePage properties={publicProperties} />} /><Route path="/propiedades" element={<ListingsPage properties={publicProperties} />} /><Route path="/propiedad/:id" element={<DetailPage properties={properties} />} /><Route path="/admin/login" element={<LoginPage onLogin={() => setAuthenticated(true)} />} /><Route path="/admin/crear-contrasena" element={<PasswordSetupPage />} /><Route path="/admin" element={adminElement} /><Route path="*" element={<Navigate to="/" />} /></Routes></>
 }
 
 export default App
