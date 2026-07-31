@@ -107,7 +107,7 @@ create table if not exists public.properties (
   zone text not null default '',
   address text not null default '',
   bedrooms integer not null default 0,
-  bathrooms integer not null default 0,
+  bathrooms numeric not null default 0,
   parking integer not null default 0,
   area_m2 numeric not null default 0,
   status text not null default 'Disponible' check (status in ('Disponible', 'Reservada', 'Vendida', 'Alquilada')),
@@ -117,6 +117,10 @@ create table if not exists public.properties (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.properties
+alter column bathrooms type numeric
+using bathrooms::numeric;
 
 alter table public.properties enable row level security;
 
