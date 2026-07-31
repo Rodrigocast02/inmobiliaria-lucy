@@ -104,7 +104,7 @@ h2 { font-size:clamp(2rem,4vw,3.25rem); }
 .breadcrumbs { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; margin-bottom:25px; }
 .detail-gallery { overflow:hidden; background:#111; box-shadow:0 16px 45px #17221e1c; }
 .gallery-stage { position:relative; height:clamp(430px,62vw,720px); display:grid; place-items:center; background:#111; }
-.gallery-stage>img { width:100%; height:100%; object-fit:contain; }
+.gallery-stage>img { position:absolute; inset:0; display:block; width:100%; height:100%; min-width:0; min-height:0; object-fit:contain; }
 .gallery-status,.gallery-count { position:absolute; top:16px; z-index:2; color:#fff; padding:7px 12px; border-radius:20px; background:#17221ed9; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
 .gallery-status { left:16px; background:var(--green); }
 .gallery-status.vendida,.gallery-status.alquilada { background:#e12929; }
