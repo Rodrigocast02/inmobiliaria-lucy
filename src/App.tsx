@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowRight, Bath, BedDouble, Building2, Car, Check, ChevronLeft, ChevronRight, Facebook, Home,
   Eye, EyeOff, Instagram, KeyRound, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil,
-  Maximize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, UserPlus, Users, X,
+  Maximize2, Minimize2, Plus, Ruler, Search, ShieldCheck, Star, Trash2, Upload, UserPlus, Users, X,
 } from 'lucide-react'
 import { demoProperties } from './data'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
@@ -154,19 +154,43 @@ function ListingsPage({ properties }: { properties: Property[] }) {
 
 function PropertyGallery({ property }: { property: Property }) {
   const [active, setActive] = useState(0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const galleryRef = useRef<HTMLDivElement>(null)
   const images = property.images.length ? property.images : ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=85']
   const show = (index: number) => setActive((index + images.length) % images.length)
-  const openFullscreen = () => {
-    const gallery = document.querySelector('.detail-gallery')
-    if (gallery instanceof HTMLElement) gallery.requestFullscreen?.()
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(document.fullscreenElement === galleryRef.current)
+    }
+
+    document.addEventListener('fullscreenchange', syncFullscreenState)
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState)
+  }, [])
+
+  const toggleFullscreen = async () => {
+    if (document.fullscreenElement === galleryRef.current) {
+      await document.exitFullscreen?.()
+      return
+    }
+
+    await galleryRef.current?.requestFullscreen?.()
   }
 
-  return <div className="detail-gallery">
+  return <div ref={galleryRef} className="detail-gallery">
     <div className="gallery-stage">
       <img src={images[active]} alt={`${property.title}, fotografía ${active + 1} de ${images.length}`} />
       <span className={`gallery-status ${property.status.toLowerCase()}`}>{property.status}</span>
       <span className="gallery-count">{active + 1} / {images.length}</span>
-      <button className="gallery-fullscreen" type="button" aria-label="Ver galería en pantalla completa" onClick={openFullscreen}><Maximize2 /></button>
+      <button
+        className="gallery-fullscreen"
+        type="button"
+        aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Ver galería en pantalla completa'}
+        title={isFullscreen ? 'Salir de pantalla completa' : 'Ver en pantalla completa'}
+        onClick={toggleFullscreen}
+      >
+        {isFullscreen ? <Minimize2 /> : <Maximize2 />}
+      </button>
       {images.length > 1 && <>
         <button className="gallery-arrow gallery-previous" type="button" aria-label="Fotografía anterior" onClick={() => show(active - 1)}><ChevronLeft /></button>
         <button className="gallery-arrow gallery-next" type="button" aria-label="Fotografía siguiente" onClick={() => show(active + 1)}><ChevronRight /></button>
