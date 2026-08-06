@@ -455,7 +455,17 @@ function AdminPage({ properties, setProperties, role, onLogout }: { properties: 
     }
     setProperties(prev => prev.some(p => p.id === final.id) ? prev.map(p => p.id === final.id ? final : p) : [final, ...prev]); setEditing(null)
   }
-  const remove = async (id: string) => { if (!confirm('¿Eliminar esta propiedad?')) return; if (supabase) await supabase.from('properties').delete().eq('id', id); setProperties(prev => prev.filter(p => p.id !== id)) }
+  const remove = async (id: string) => {
+    if (!confirm('¿Eliminar esta propiedad?')) return
+    if (supabase) {
+      const { error } = await supabase.from('properties').delete().eq('id', id)
+      if (error) {
+        alert('No se pudo eliminar la propiedad. Intenta nuevamente.')
+        return
+      }
+    }
+    setProperties(prev => prev.filter(p => p.id !== id))
+  }
   if (editing) return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><PropertyForm initial={editing === 'new' ? undefined : editing} onSave={save} onCancel={() => setEditing(null)} /></main></div>
   if (section === 'users' && role === 'admin') return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><UsersPanel /></main></div>
   return <div className="admin-shell"><AdminSidebar role={role} section={section} onSectionChange={setSection} onLogout={onLogout} /><main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">Panel de control</span><h1>Propiedades</h1><p>Administra el contenido visible en el sitio.</p></div><button className="button" onClick={() => setEditing('new')}><Plus size={18} /> Nueva propiedad</button></div>{!isSupabaseConfigured && <div className="admin-demo"><strong>Estás viendo el modo demostración.</strong> Conecta Supabase para guardar cambios permanentemente.</div>}<div className="stats"><div><strong>{properties.length}</strong><span>Total</span></div><div><strong>{properties.filter(p => p.published).length}</strong><span>Publicadas</span></div><div><strong>{properties.filter(p => p.operation === 'Venta').length}</strong><span>En venta</span></div><div><strong>{properties.filter(p => p.operation === 'Renta').length}</strong><span>En renta</span></div></div><div className="admin-table"><div className="table-head"><span>Propiedad</span><span>Operación</span><span>Precio</span><span>Estado</span><span>Acciones</span></div>{properties.map(p => <div className="table-row" key={p.id}><div className="table-property"><img src={p.images[0]} alt="" /><span><strong>{p.title}</strong><small>{p.zone}, {p.city}</small></span></div><span>{p.operation}</span><strong>{money(p)}</strong><span className={p.published ? 'status published' : 'status'}>{p.published ? 'Publicada' : 'Oculta'}</span><div className="table-actions"><button aria-label="Editar" onClick={() => setEditing(p)}><Pencil size={17} /></button><button aria-label="Eliminar" onClick={() => remove(p.id)}><Trash2 size={17} /></button></div></div>)}</div></main></div>
@@ -465,7 +475,7 @@ function AdminSidebar({ role, section, onSectionChange, onLogout }: { role: User
 
 function App() {
   const navigate = useNavigate()
-  const [properties, setProperties] = useState<Property[]>(demoProperties)
+  const [properties, setProperties] = useState<Property[]>(isSupabaseConfigured ? [] : demoProperties)
   const [authenticated, setAuthenticated] = useState(false)
   const [role, setRole] = useState<UserRole | null>(isSupabaseConfigured ? null : 'admin')
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured)
@@ -517,11 +527,9 @@ function App() {
         setAuthReady(true)
       }, 0)
     })
-    supabase.from('properties').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (!data?.length) return
-      const savedProperties = data as Property[]
-      const savedIds = new Set(savedProperties.map(property => property.id))
-      setProperties([...savedProperties, ...demoProperties.filter(property => !savedIds.has(property.id))])
+    supabase.from('properties').select('*').order('created_at', { ascending: false }).then(({ data, error }) => {
+      if (error) return
+      setProperties((data ?? []) as Property[])
     })
     return () => authListener.subscription.unsubscribe()
   }, [])
