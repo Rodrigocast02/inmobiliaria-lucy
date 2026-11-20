@@ -16,6 +16,7 @@ export interface Property {
   bathrooms: number
   parking: number
   area_m2: number
+  amenities?: string[]
   status: PropertyStatus
   featured: boolean
   published: boolean

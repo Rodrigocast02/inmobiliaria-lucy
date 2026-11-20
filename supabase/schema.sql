@@ -110,6 +110,7 @@ create table if not exists public.properties (
   bathrooms numeric not null default 0,
   parking integer not null default 0,
   area_m2 numeric not null default 0,
+  amenities text[] not null default '{}',
   status text not null default 'Disponible' check (status in ('Disponible', 'Reservada', 'Vendida', 'Alquilada')),
   featured boolean not null default false,
   published boolean not null default false,
@@ -121,6 +122,9 @@ create table if not exists public.properties (
 alter table public.properties
 alter column bathrooms type numeric
 using bathrooms::numeric;
+
+alter table public.properties
+add column if not exists amenities text[] not null default '{}';
 
 alter table public.properties enable row level security;
 
